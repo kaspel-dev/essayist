@@ -1,0 +1,21 @@
+spring:
+  ai:
+    mcp:
+      client:
+        enabled: true
+        name: kaspel-essayist
+        version: 0.1.0
+        request-timeout: 30s
+        type: SYNC
+        stdio:
+          connections:
+            fetch-mcp:
+              command: npx
+              args:
+                - -y
+                - "@tokenizin/mcp-npx-fetch"
+            wikipedia-mcp:
+              command: npx
+              args:
+                - -y
+                - "wikipedia-mcp"

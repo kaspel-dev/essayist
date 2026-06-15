@@ -1,0 +1,14 @@
+spring:
+  ai:
+    mcp:
+      client:
+        enabled: true
+        name: kaspel-reporting
+        version: 0.1.0
+        request-timeout: 60s
+        type: SYNC
+        streamable-http:
+          connections:
+            super-mcp:
+              url: http://localhost:5008
+              endpoint: /mcp

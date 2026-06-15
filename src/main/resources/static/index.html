@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kaspel Essayist</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="app-frame">
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Kaspel Essayist</p>
+          <h1>AI essay writer</h1>
+        </div>
+        <nav class="topbar__actions" aria-label="Workspace views">
+          <a class="topbar__link topbar__link--active" href="/">Essays</a>
+          <a class="topbar__link" href="/reports">Reports</a>
+          <a class="topbar__link" href="/tools" target="_blank" rel="noreferrer">Tools</a>
+        </nav>
+      </header>
+
+      <form class="composer"
+            hx-post="/runs"
+            hx-target="#runs"
+            hx-swap="afterbegin"
+            hx-disabled-elt="button">
+        <label for="topic">Topic</label>
+        <label class="mode-toggle">
+          <input type="checkbox" name="demo" value="true" checked>
+          <span>Demo mode</span>
+        </label>
+        <div class="composer__row">
+          <textarea id="topic"
+                    name="topic"
+                    rows="3"
+                    required
+                    placeholder="Write about Spring AI tool calling for beginners"></textarea>
+          <button type="submit">Generate</button>
+        </div>
+      </form>
+
+      <section id="runs" class="runs" aria-live="polite"></section>
+    </section>
+  </main>
+</body>
+</html>

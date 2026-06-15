@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: kaspel-essayist
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+
+server:
+  port: 7001
+
+essayist:
+  output-dir: essays
+  number-of-keywords: 5
+
+embabel:
+  agent:
+    platform:
+      models:
+        anthropic:
+          api-key: ${ANTHROPIC_API_KEY:}
+        openai:
+          api-key: ${OPENAI_API_KEY:}
+  models:
+    default-llm: claude-sonnet-4-6

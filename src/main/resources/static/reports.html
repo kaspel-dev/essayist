@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kaspel Reporting</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="app-frame">
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Kaspel Reporting</p>
+          <h1>Reporting agent</h1>
+        </div>
+        <nav class="topbar__actions" aria-label="Workspace views">
+          <a class="topbar__link" href="/">Essays</a>
+          <a class="topbar__link topbar__link--active" href="/reports">Reports</a>
+          <a class="topbar__link" href="/tools" target="_blank" rel="noreferrer">Tools</a>
+        </nav>
+      </header>
+
+      <form class="composer"
+            hx-post="/report-runs"
+            hx-target="#report-runs"
+            hx-swap="afterbegin"
+            hx-disabled-elt="button">
+        <label for="prompt">Report brief</label>
+        <label class="mode-toggle">
+          <input type="checkbox" name="demo" value="true" checked>
+          <span>Demo mode</span>
+        </label>
+        <div class="composer__row">
+          <textarea id="prompt"
+                    name="prompt"
+                    rows="3"
+                    required
+                    placeholder="Top Performing Campaigns Analysis - Identify best practices for replication"></textarea>
+          <button type="submit">Generate</button>
+        </div>
+      </form>
+
+      <section id="report-runs" class="runs" aria-live="polite"></section>
+    </section>
+  </main>
+</body>
+</html>
