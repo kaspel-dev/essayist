@@ -165,6 +165,15 @@ class ReportRunService(
         )
 
         steps.forEach { (actionName, detail) ->
+            var extra = ""
+            if (actionName == "queryReportData") {
+                extra = HtmlFragments.reportExplanation(
+                    run = run,
+                    framework = "Spring AI",
+                    title = "Automatic tool-calling loop",
+                    detail = "Demo mode simulates the ChatClient tool loop that would normally query Superset MCP.",
+                )
+            }
             stream.fragment(
                 HtmlFragments.reportActionGoalUpdate(
                     run = run,
@@ -176,7 +185,7 @@ class ReportRunService(
                         title = "$actionName complete",
                         detail = detail,
                         state = "complete",
-                    )
+                    ) + extra
             )
             pauseForDemo()
         }
@@ -276,8 +285,8 @@ private class ReportProgressListener(
                 HtmlFragments.reportExplanation(
                     run = run,
                     framework = "Spring AI",
-                    title = "Tool loop opened",
-                    detail = "The LLM can call ${event.toolNames.size} tool(s) while creating ${event.outputClass.simpleName}.",
+                    title = "Automatic tool-calling loop",
+                    detail = "Spring AI ChatClient is managing a loop to call ${event.toolNames.size} tool(s) until the request for ${event.outputClass.simpleName} is satisfied.",
                 )
             )
 

@@ -25,6 +25,9 @@ After reading and running this project, an engineer should understand how to:
 10. Stream planning, action, LLM, and tool events into a browser UI.
 11. Use Embabel DICE content hashing to anchor context capsules with repeatable provenance.
 12. Use a context-engineering preflight step to make later LLM actions more grounded and observable.
+13. Apply custom guardrails before model calls.
+14. Record relevancy and faithfulness evals as typed workflow state.
+15. Prefer framework-controlled tool loops unless a product workflow needs manual loop control.
 
 ## Project Scope
 
@@ -161,6 +164,8 @@ Configuration lives in `src/main/resources/application.yaml` and the profile-spe
 | `OPENAI_API_KEY` | - | OpenAI key used by configured OpenAI models and embeddings |
 | `essayist.output-dir` | `essays` | Directory for published Markdown essays |
 | `essayist.number-of-keywords` | `5` | Maximum generated keywords for front matter |
+| `essayist.evals.live` | `false` | Use Spring AI LLM-as-judge evals instead of deterministic fallback evals |
+| `essayist.evals.minimum-score` | `0.6` | Minimum score for deterministic eval pass/fail |
 | `embabel.models.default-llm` | `claude-sonnet-4-6` | Default model for most agent actions |
 
 Anthropic is wired in both the Spring AI and Embabel namespaces:
@@ -351,17 +356,29 @@ This is the project's main explainability pattern. The UI is not guessing what h
 
    Produces Markdown content from the research brief and DICE capsule. This is the only LLM call in the simplified live essay path.
 
-4. `reviewDraft(DraftEssay, EssayContextCapsule): ReviewedEssay`
+4. `evaluateDraft(DraftEssay, ResearchedTopic, EssayContextCapsule): EvaluatedDraft`
+
+   Runs relevancy and faithfulness checks and stores the result as typed workflow state. By default, evals use a deterministic fallback so tests and demos do not call another model. Set `essayist.evals.live=true` to use Spring AI's built-in `RelevancyEvaluator` and `FactCheckingEvaluator` as the faithfulness check.
+
+5. `reviewDraft(EvaluatedDraft, EssayContextCapsule): ReviewedEssay`
 
    Uses the local `EssayQualityTool` and a DICE-alignment check. No second model call is made.
 
-5. `addTldr(ReviewedEssay, EssayContextCapsule): FinalEssay`
+6. `addTldr(ReviewedEssay, EssayContextCapsule): FinalEssay`
 
    Adds a concise deterministic summary from the most important DICE proposition.
 
-6. `addFrontMatter(FinalEssay, EssayContextCapsule): PublishedEssay`
+7. `addFrontMatter(FinalEssay, EssayContextCapsule): PublishedEssay`
 
    Uses `ReadingStatsTool`, generates deterministic YAML front matter, writes the Markdown file to disk, and returns the goal object.
+
+## Guardrails, Evals, And Loops
+
+`EssayStyleGuardRail` is applied directly to the Embabel `PromptRunner` in `writeDraft`, which keeps the guardrail close to the model call it protects. `EssayStyleAdvisor` exposes the same policy as a Spring AI `BaseAdvisor` for future direct `ChatClient` paths.
+
+The eval step uses Spring AI's `EvaluationRequest` and `EvaluationResponse` contract. Live evals are optional because LLM-as-judge calls add latency and cost; the deterministic fallback keeps CI stable while preserving the same typed `EssayEvalReport` shape.
+
+The reporting flow keeps tool execution framework-controlled: the agent asks for the Superset MCP tool group and lets Embabel/Spring AI run the tool-calling loop. Use a custom loop only when the product needs per-iteration UI control, approvals, or custom retry policy.
 
 ## Reporting Agent Walkthrough
 

@@ -455,6 +455,12 @@ private enum class PipelineGoal(
         title = "Write draft",
         detail = "Create a practical beginner-friendly Markdown draft.",
     ),
+    Eval(
+        id = "eval",
+        actionName = "evaluateDraft",
+        title = "Evaluate draft",
+        detail = "Check relevancy and faithfulness before review.",
+    ),
     Review(
         id = "review",
         actionName = "reviewDraft",

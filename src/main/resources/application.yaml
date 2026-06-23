@@ -11,6 +11,9 @@ server:
 essayist:
   output-dir: essays
   number-of-keywords: 5
+  evals:
+    live: false
+    minimum-score: 0.6
 
 embabel:
   agent:

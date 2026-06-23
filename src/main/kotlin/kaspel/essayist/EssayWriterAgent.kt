@@ -6,6 +6,7 @@ import com.embabel.agent.api.annotation.Agent
 import com.embabel.agent.api.common.Ai
 import com.embabel.agent.domain.io.UserInput
 import com.embabel.common.ai.model.LlmOptions
+import kaspel.essayist.guardrails.EssayStyleGuardRail
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.file.Files
@@ -18,6 +19,8 @@ class EssayWriterAgent(
     private val readingStatsTool: ReadingStatsTool,
     private val essayQualityTool: EssayQualityTool,
     private val diceContextService: DiceContextService,
+    private val essayEvaluationService: EssayEvaluationService,
+    private val essayStyleGuardRail: EssayStyleGuardRail,
 ) {
 
     @Action(description = "Build a DICE context capsule")
@@ -49,11 +52,12 @@ class EssayWriterAgent(
         )
 
     @Action(description = "Write a first draft of the essay")
-    fun writeDraft(research: ResearchedTopic, context: EssayContextCapsule, ai: Ai): DraftEssay =
-        ai
+    fun writeDraft(research: ResearchedTopic, context: EssayContextCapsule, ai: Ai): DraftEssay {
+        return ai
             .withLlm(LlmOptions.withDefaults().withMaxTokens(4096))
             .withId("essay-draft-writer")
             .withPromptContributors(listOf(Personas.WRITER, Personas.JSON_OUTPUT))
+            .withGuardRails(essayStyleGuardRail)
             .creating(DraftEssay::class.java)
             .fromPrompt(
                 """
@@ -72,9 +76,20 @@ class EssayWriterAgent(
                 Write the content in Markdown.
                 """.trimIndent()
             )
+    }
+
+    @Action(description = "Evaluate the draft for relevancy and faithfulness")
+    fun evaluateDraft(draft: DraftEssay, research: ResearchedTopic, context: EssayContextCapsule): EvaluatedDraft {
+        val evalReport = essayEvaluationService.evaluateDraft(draft, research, context)
+        return EvaluatedDraft(
+            title = draft.title,
+            content = draft.content,
+            evalReport = evalReport,
+        )
+    }
 
     @Action(description = "Review the draft with deterministic local checks")
-    fun reviewDraft(draft: DraftEssay, context: EssayContextCapsule): ReviewedEssay {
+    fun reviewDraft(draft: EvaluatedDraft, context: EssayContextCapsule): ReviewedEssay {
         val checklist = essayQualityTool.buildEssayQualityChecklist(draft.title, draft.content)
         val alignedPropositions = context.propositions.count { proposition ->
             draft.content.contains(proposition.subject, ignoreCase = true) ||
@@ -85,6 +100,7 @@ class EssayWriterAgent(
             """
             Local review completed.
             DICE alignment: $alignedPropositions of ${context.propositions.size} proposition(s) have visible support in the draft.
+            ${draft.evalReport.toFeedbackBlock()}
             $checklist
             """.trimIndent()
 

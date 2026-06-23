@@ -164,12 +164,38 @@ class EssayRunService(
         val steps = listOf(
             "researchTopic" to "Collected demo research context.",
             "writeDraft" to "Created the demo Markdown draft.",
+            "evaluateDraft" to "Evaluated draft relevancy and faithfulness.",
             "reviewDraft" to "Applied the demo review checklist.",
             "addTldr" to "Added a concise summary.",
             "addFrontMatter" to "Prepared metadata and the published artifact.",
         )
 
         steps.forEach { (actionName, detail) ->
+            var extra = ""
+            if (actionName == "writeDraft") {
+                extra = HtmlFragments.explanation(
+                    run = run,
+                    framework = "Spring AI",
+                    title = "Guardrail applied",
+                    detail = "Applying the essay style guardrail before draft generation.",
+                )
+            }
+            if (actionName == "evaluateDraft") {
+                extra = HtmlFragments.explanation(
+                    run = run,
+                    framework = "Spring AI",
+                    title = "Evals completed",
+                    detail = "Relevancy and faithfulness checks were recorded as typed evaluation results.",
+                )
+            }
+            if (actionName == "addFrontMatter") {
+                extra = HtmlFragments.explanation(
+                    run = run,
+                    framework = "Embabel",
+                    title = "Artifact published",
+                    detail = "The final action adds deterministic metadata and writes the Markdown artifact.",
+                )
+            }
             stream.fragment(
                 HtmlFragments.actionGoalUpdate(
                     run = run,
@@ -181,7 +207,7 @@ class EssayRunService(
                         title = "$actionName complete",
                         detail = detail,
                         state = "complete",
-                    )
+                    ) + extra
             )
             pauseForDemo()
         }
@@ -241,6 +267,23 @@ private class HtmlProgressListener(
 
             is ActionExecutionStartEvent -> {
                 val actionName = event.action.shortName()
+                var extra = ""
+                if (actionName == "writeDraft") {
+                    extra = HtmlFragments.explanation(
+                        run = run,
+                        framework = "Spring AI",
+                        title = "Guardrail applied",
+                        detail = "The Embabel prompt runner applies EssayStyleGuardRail to the draft-generation call.",
+                    )
+                }
+                if (actionName == "evaluateDraft") {
+                    extra = HtmlFragments.explanation(
+                        run = run,
+                        framework = "Spring AI",
+                        title = "Evals running",
+                        detail = "The draft is checked for relevancy and faithfulness before local review.",
+                    )
+                }
                 stream.fragment(
                     HtmlFragments.actionGoalUpdate(
                         run = run,
@@ -258,7 +301,7 @@ private class HtmlProgressListener(
                             framework = "Embabel",
                             title = "Action started",
                             detail = "$actionName is an @Action method in EssayWriterAgent.",
-                        )
+                        ) + extra
                 )
             }
 
@@ -298,8 +341,8 @@ private class HtmlProgressListener(
                 HtmlFragments.explanation(
                     run = run,
                     framework = "Spring AI",
-                    title = "Tool loop opened",
-                    detail = "The LLM can call ${event.toolNames.size} tool(s) while creating ${event.outputClass.simpleName}.",
+                    title = "Automatic tool-calling loop",
+                    detail = "Spring AI ChatClient is managing a loop to call ${event.toolNames.size} tool(s) until the request for ${event.outputClass.simpleName} is satisfied.",
                 )
             )
 

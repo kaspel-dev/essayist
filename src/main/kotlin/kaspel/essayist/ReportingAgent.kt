@@ -6,13 +6,15 @@ import com.embabel.agent.api.annotation.Agent
 import com.embabel.agent.api.common.Ai
 import com.embabel.agent.domain.io.UserInput
 import com.embabel.common.ai.model.LlmOptions
+import org.slf4j.LoggerFactory
 
 @Agent(description = "Build chart-ready business reports using Superset MCP data tools")
 class ReportingAgent {
 
     @Action(description = "Query Superset MCP for reporting data")
-    fun queryReportData(userInput: UserInput, ai: Ai): ReportData =
-        ai
+    fun queryReportData(userInput: UserInput, ai: Ai): ReportData {
+        log.info("Automatic tool-calling loop enabled for queryReportData")
+        return ai
             .withDefaultLlm()
             .withToolGroup(ReportingToolGroups.SUPER_MCP_REPORTING)
             .withId("super-mcp-report-query")
@@ -34,6 +36,7 @@ class ReportingAgent {
                 omit it and add a source note explaining the gap.
                 """.trimIndent()
             )
+    }
 
     @Action(description = "Design chart specifications for the report")
     fun designCharts(data: ReportData, ai: Ai): ChartPlan =
@@ -69,4 +72,8 @@ class ReportingAgent {
             charts = plan.charts,
             sourceNotes = data.sourceNotes + plan.notes,
         )
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ReportingAgent::class.java)
+    }
 }
