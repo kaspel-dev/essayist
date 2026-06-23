@@ -9,27 +9,34 @@ import com.embabel.common.ai.model.LlmOptions
 import org.slf4j.LoggerFactory
 
 @Agent(description = "Build chart-ready business reports using Superset MCP data tools")
-class ReportingAgent {
+class ReportingAgent(
+    private val reportChartPlanner: ReportChartPlanner,
+) {
 
     @Action(description = "Query Superset MCP for reporting data")
     fun queryReportData(userInput: UserInput, ai: Ai): ReportData {
         log.info("Automatic tool-calling loop enabled for queryReportData")
         return ai
-            .withDefaultLlm()
+            .withLlm(LlmOptions.withDefaults().withMaxTokens(2048))
             .withToolGroup(ReportingToolGroups.SUPER_MCP_REPORTING)
             .withId("super-mcp-report-query")
             .withPromptContributors(listOf(Personas.JSON_OUTPUT))
             .creating(ReportData::class.java)
             .fromPrompt(
                 """
-                Build a report dataset for this request using the Superset MCP reporting tools.
+                Build a compact report dataset for this request using the Superset MCP reporting tools.
                 The Superset MCP server is configured at http://localhost:5008/mcp through Spring AI MCP.
-                Call the available MCP tools before producing the report data.
-                Use no more than 8 tool calls.
+                This is an MCP capability showcase, so use the smallest useful tool path:
+                - Prefer one execute_sql call when you can answer directly.
+                - If you must discover a dataset first, call one list or get metadata tool, then one execute_sql call.
+                - Stop after at most 2 MCP tool calls.
+                - Do not call chart creation, explore-link, export, or dashboard rendering tools.
+                - If you cannot identify the needed dataset after one discovery call, return empty rows and explain the gap in sourceNotes.
 
                 Request: ${userInput.content}
 
                 Return structured data that can be used to generate charts.
+                Keep the response compact: at most 4 metrics, 8 rows, and 4 numeric values per row.
                 Keep rows.values numeric. Do not put commas, currency symbols, or percent signs in rows.values.
                 Put display formatting such as %, USD, or count in metric.value or metric.unit.
                 Do not invent values. If a requested number is not available from tool responses,
@@ -38,27 +45,9 @@ class ReportingAgent {
             )
     }
 
-    @Action(description = "Design chart specifications for the report")
-    fun designCharts(data: ReportData, ai: Ai): ChartPlan =
-        ai
-            .withLlm(LlmOptions.withDefaults().withMaxTokens(8192))
-            .withId("super-mcp-chart-designer")
-            .withPromptContributors(listOf(Personas.JSON_OUTPUT))
-            .creating(ChartPlan::class.java)
-            .fromPrompt(
-                """
-                Convert this report dataset into chart specifications and concise findings.
-
-                Dataset:
-                $data
-
-                Create 1 to 4 charts when the dataset contains chartable numeric values.
-                Use only these chart types: bar, line.
-                Each chart must contain at least one series and every point must have a label and numeric value.
-                Do not invent values or categories. Prefer readable labels under 24 characters.
-                If there is no chartable data, return an empty charts array and explain why in notes.
-                """.trimIndent()
-            )
+    @Action(description = "Design chart specifications locally from MCP report data")
+    fun designCharts(data: ReportData): ChartPlan =
+        reportChartPlanner.plan(data)
 
     @AchievesGoal(description = "A reporting result with chart specifications")
     @Action(description = "Publish the reporting result")

@@ -5,10 +5,18 @@ spring:
         enabled: true
         name: kaspel-reporting
         version: 0.1.0
-        request-timeout: 60s
+        request-timeout: 15s
         type: SYNC
         streamable-http:
           connections:
             super-mcp:
               url: http://localhost:5008
               endpoint: /mcp
+
+embabel:
+  agent:
+    platform:
+      toolloop:
+        max-iterations: 3
+        tool-not-found:
+          max-retries: 0

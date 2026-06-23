@@ -5,6 +5,7 @@ import com.embabel.agent.core.ToolGroupDescription
 import com.embabel.agent.core.ToolGroupPermission
 import com.embabel.agent.tools.mcp.McpToolGroup
 import io.modelcontextprotocol.client.McpSyncClient
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -35,6 +36,31 @@ class ReportingToolConfiguration(
             provider = "Superset MCP",
             permissions = setOf(ToolGroupPermission.INTERNET_ACCESS),
             clients = mcpSyncClients,
-            filter = { true },
+            filter = { callback ->
+                val toolName = callback.toolDefinition.name()
+                val include = ReportingToolFilters.isFastReportingTool(toolName)
+                if (!include) {
+                    log.debug("Skipping Superset MCP tool {} for fast report demo", toolName)
+                }
+                include
+            },
         )
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ReportingToolConfiguration::class.java)
+    }
+}
+
+private object ReportingToolFilters {
+
+    private val allowedSuffixes = setOf(
+        "list_dashboards",
+        "get_dashboard",
+        "list_datasets",
+        "get_dataset",
+        "execute_sql",
+    )
+
+    fun isFastReportingTool(toolName: String): Boolean =
+        allowedSuffixes.any { suffix -> toolName == suffix || toolName.endsWith("_$suffix") }
 }

@@ -90,6 +90,20 @@ Java teams already on Spring Boot who want enterprise-grade AI capabilities with
 
 While Spring AI provides the foundation, Embabel (created by engineers with deep Spring roots, including Rod Johnson) takes it to the next level with autonomous, goal-oriented agents.
 
+Rod Johnson brain behind (spring and embabel) has argued that the future isn't "an LLM that does everything" but rather software platforms that orchestrate models. Embabel reflects the belief that:
+
+LLMs should be one component in a well-engineered system, not the whole brain.
+Explainability and determinism matter for production use.
+The discipline that made Spring successful (clean abstractions, DI, testability) should apply to AI agents.
+
+GOAP (Goal-Oriented Action Planning)
+The most distinctive idea is the use of GOAP, a planning algorithm borrowed from the video game AI world (famously used in games like F.E.A.R.).
+
+Instead of relying purely on an LLM to decide the next step (as ReAct-style agents do), Embabel uses a deterministic planning algorithm to find a path from the current world state to a goal.
+You define actions (with preconditions and effects) and goals, and the system dynamically computes the sequence of steps.
+This blends non-deterministic LLM reasoning with deterministic, explainable planning, addressing reliability concerns of pure-LLM agents.
+
+
 ### The GOAP Advantage (Goal-Oriented Action Planning)
 
 Most agent frameworks (like Crew.ai) rely on rigid prompts or sequential loops. Embabel uses **GOAP**. You define the **Actions** (with inputs and outputs) and a **Goal** (the desired output type). Embabel's planner then determines the most efficient path to reach that goal.

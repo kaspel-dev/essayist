@@ -72,6 +72,7 @@ Use live mode when you want to exercise the actual agent graph:
 
 - essay live mode calls Claude for the draft only; DICE context, research brief, review, TLDR, and front matter are local deterministic steps
 - report live mode calls Claude and the configured Superset MCP tool group
+- report live mode uses one bounded MCP-backed model action, then builds chart specs locally for speed
 - live mode can take significantly longer because model retries and remote tools are involved
 - report live mode requires the `mcp-super` profile and a reachable Superset MCP server
 
@@ -85,7 +86,7 @@ SPRING_PROFILES_ACTIVE=mcp-super ./gradlew bootRun
 
 Then open `http://localhost:7001/reports`.
 
-The `/tools` page should show the `super-mcp-reporting` group with Superset MCP tools such as `list_dashboards`, `list_datasets`, `execute_sql`, `generate_chart`, and `generate_explore_link`.
+The `/tools` page should show the `super-mcp-reporting` group with the fast demo allowlist, such as `list_dashboards`, `get_dashboard`, `list_datasets`, `get_dataset`, and `execute_sql`.
 
 ## Other MCP Profiles
 
@@ -386,17 +387,17 @@ The reporting flow keeps tool execution framework-controlled: the agent asks for
 
 1. `queryReportData(UserInput, Ai): ReportData`
 
-   Calls Superset MCP tools before creating structured report data. The prompt asks the model not to invent values and to record source gaps in `sourceNotes`.
+   Calls a narrowed Superset MCP tool group before creating compact structured report data. The prompt asks the model to use the smallest useful tool path, usually one SQL call or one discovery call followed by one SQL call, and to record source gaps in `sourceNotes`.
 
-2. `designCharts(ReportData, Ai): ChartPlan`
+2. `designCharts(ReportData): ChartPlan`
 
-   Converts data rows and metrics into UI-renderable chart specifications.
+   Converts data rows and metrics into UI-renderable chart specifications locally. This avoids a second LLM call and keeps `/reports` fast enough for MCP demos.
 
 3. `publishReport(ReportData, ChartPlan): PublishedReport`
 
    Combines source data and chart planning into the final goal object.
 
-This agent is useful for teaching MCP because the model sees a large tool surface, but the application still requires a typed result before the UI renders anything.
+This agent is useful for teaching MCP because the model still calls a real remote tool surface, but the application keeps that surface narrow and requires a typed result before the UI renders anything.
 
 ## HTTP And UI Flow
 
@@ -486,7 +487,7 @@ The UI exposes planning, actions, model calls, and tool calls. This is essential
 - Add a plagiarism or style policy tool to `reviewDraft`.
 - Add an optional second-pass model review and compare outputs.
 - Add a report action that validates generated chart data before publishing.
-- Restrict the Superset MCP tool group with a `filter` instead of exposing all tools.
+- Tune the Superset MCP tool allowlist in `ReportingToolConfiguration` for a specific demo dataset.
 - Persist run history so completed runs can be revisited after page refresh.
 - Add tests for the tool registry and readiness messages.
 

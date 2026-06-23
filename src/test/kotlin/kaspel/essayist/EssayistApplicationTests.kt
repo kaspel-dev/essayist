@@ -32,6 +32,9 @@ class EssayistApplicationTests {
     private lateinit var essayEvaluationService: EssayEvaluationService
 
     @Autowired
+    private lateinit var reportChartPlanner: ReportChartPlanner
+
+    @Autowired
     private lateinit var mockMvc: MockMvc
 
     @Test
@@ -128,6 +131,30 @@ class EssayistApplicationTests {
                 advisorChain,
             )
         }
+    }
+
+    @Test
+    fun reportChartPlannerBuildsChartsWithoutLlmCall() {
+        val plan = reportChartPlanner.plan(
+            ReportData(
+                title = "Monthly revenue",
+                request = "Show monthly revenue",
+                sourceSummary = "Revenue grew across the selected months.",
+                metrics = listOf(
+                    ReportMetric(label = "Revenue", value = "250000", unit = "USD")
+                ),
+                rows = listOf(
+                    ReportDataRow(label = "Jan", category = "Month", values = mapOf("revenue" to 120_000.0)),
+                    ReportDataRow(label = "Feb", category = "Month", values = mapOf("revenue" to 180_000.0)),
+                    ReportDataRow(label = "Mar", category = "Month", values = mapOf("revenue" to 250_000.0)),
+                ),
+            )
+        )
+
+        assertThat(plan.charts).hasSize(1)
+        assertThat(plan.charts.first().series.first().points).hasSize(3)
+        assertThat(plan.charts.first().type).isEqualTo("line")
+        assertThat(plan.notes).anyMatch { it.contains("generated locally") }
     }
 
     @Test
