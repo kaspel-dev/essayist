@@ -28,7 +28,8 @@ After reading and running this project, an engineer should understand how to:
 13. Apply custom guardrails before model calls.
 14. Record relevancy and faithfulness evals as typed workflow state.
 15. Run deterministic Dokimos quality gates over agent outputs.
-16. Prefer framework-controlled tool loops unless a product workflow needs manual loop control.
+16. Package a local SkillsJars-style `SKILL.md` so agent skills can travel with the project artifact.
+17. Prefer framework-controlled tool loops unless a product workflow needs manual loop control.
 
 ## Project Scope
 
@@ -50,6 +51,7 @@ The application is intentionally small enough to read in one sitting, but broad 
 - run lifecycle management
 - explainability events
 - evaluation reports with Dokimos quality gates
+- packaged agent skills using the SkillsJars `META-INF/skills` convention
 - configuration through Spring profiles
 
 ## Quick Start
@@ -191,6 +193,39 @@ val correctness = ToolCorrectnessEvaluator.builder().build().evaluate(testCase)
 ```
 
 That is the natural enhancement when the product needs to evaluate agent behavior, not only the final essay text. The official collector observes Embabel tool-call events and synthesizes `ToolDefinition` entries from the observed tool names. That is enough for tool validity, correctness, and efficiency checks; for tool-description reliability, pass explicit tool definitions from the real tool contracts because the Embabel event stream does not expose full input schemas.
+
+## SkillsJars Skill Example
+
+The project includes a simple local SkillsJars-style skill at `skills/essay-review/SKILL.md`. The skill gives an AI code assistant or agent a compact review checklist for Kaspel Essayist outputs: topic alignment, DICE proposition preservation, research grounding, Markdown structure, and Dokimos gate failures.
+
+Gradle packages that skill into the application resources under the SkillsJars metadata convention:
+
+```text
+META-INF/skills/kaspel/essayist/essay-review/SKILL.md
+```
+
+Inspect the packaged skill with:
+
+```bash
+./gradlew processResources
+ls build/resources/main/META-INF/skills/kaspel/essayist/essay-review
+```
+
+That keeps the example lightweight: the app demonstrates how a project-owned skill can travel on the classpath without adding another runtime framework. A future Spring AI Agent Utils integration can load the same classpath root, following the official SkillsJars Spring AI example pattern of reading skills from `classpath:/META-INF/skills`.
+
+For dependency-provided SkillsJars, the official Gradle plugin can extract skills into the directory used by an AI code assistant:
+
+```kotlin
+plugins {
+    id("com.skillsjars.gradle-plugin") version "0.0.2"
+}
+```
+
+```bash
+./gradlew extractSkillsJars -Pdir=.agents/skills
+```
+
+This repository does not apply that plugin by default because the included example is local and testable with the standard Gradle resource pipeline.
 
 ## Build And Test
 
@@ -583,6 +618,9 @@ The teams that will benefit most are those that treat agents as tools, not oracl
 
 - Embabel Agent Framework documentation
 - Spring AI MCP reference: https://docs.spring.io/spring-ai/reference/api/mcp/mcp-client-boot-starter-docs.html
+- SkillsJars GitHub organization: https://github.com/skillsjars
+- SkillsJars Gradle plugin: https://github.com/skillsjars/skillsjars-gradle-plugin
+- SkillsJars Spring AI example: https://github.com/skillsjars/skillsjars-example-spring-ai
 
 <img src="essay-agent.png" alt="Essayist" width="2228">
 <img src="explainability.png" alt="Spring AI" width="2228">
