@@ -517,7 +517,7 @@ Reading-time calculation and review checklist construction are implemented as lo
 
 The UI exposes planning, actions, model calls, and tool calls. This is essential for teaching and for production debugging.
 
-## Suggested Teaching Path
+## Teaching Path followed
 
 1. Start with the domain objects in `Essay.kt`.
 2. Read `EssayWriterAgent.kt` from top to bottom.
@@ -555,7 +555,34 @@ Before using the same patterns in production, consider:
 - human approval for write operations
 - stricter source attribution for research outputs
 
+### Deployment and Operations
+
+In the deployment phase, agents are being used to monitor infrastructure and respond to alerts. An agent can watch logs, detect anomalies, and even trigger rollback scripts. This is sometimes called AIOps.
+For teams using Spring Boot with cloud platforms, an agent might watch application metrics and automatically scale a service when latency spikes. These setups require careful guardrails. You do not want an agent making production changes without human approval.
+
+---
+
+### Key Risks to Understand
+
+Before your team adopts agent frameworks, consider these tradeoffs:
+
+- **Hallucinations**: Agents can generate confident but wrong answers. Never deploy agent output without review.
+- **Security**: Agents that have access to production systems or codebases must be scoped carefully. Least-privilege rules apply.
+- **Over-reliance**: Junior developers may stop learning if they always defer to an agent. Use agents as a learning aid, not a replacement for understanding.
+- **Cost**: Calling large language model APIs at scale can be expensive. Monitor token usage.
+
+---
+
+### A Practical Takeaway
+
+Agent frameworks are not replacing the SDLC. They are adding a new layer of automation inside it. Think of them as a capable but junior team member who works very fast and needs supervision.
+Start small. Pick one phase of your workflow — maybe code review or test generation — and introduce an agent there. Measure the time saved and the mistakes introduced. Adjust from there.
+The teams that will benefit most are those that treat agents as tools, not oracles. Used with care, these frameworks can genuinely accelerate delivery without sacrificing quality.
+
 ## References
 
 - Embabel Agent Framework documentation
 - Spring AI MCP reference: https://docs.spring.io/spring-ai/reference/api/mcp/mcp-client-boot-starter-docs.html
+
+<img src="essay-agent.png" alt="Essayist" width="2228">
+<img src="explainability.png" alt="Spring AI" width="2228">
