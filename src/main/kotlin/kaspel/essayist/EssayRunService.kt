@@ -54,6 +54,7 @@ class EssayRunService(
     private val agentPlatform: AgentPlatform,
     private val essayTaskExecutor: ExecutorService,
     private val diceContextService: DiceContextService,
+    private val dokimosEvaluationService: DokimosEvaluationService,
 ) {
 
     private val runs = ConcurrentHashMap<String, EssayRun>()
@@ -161,6 +162,13 @@ class EssayRunService(
         )
         pauseForDemo()
 
+        val demoEssay = DemoArtifacts.essay(run.topic)
+        val demoDokimosReport = dokimosEvaluationService.evaluateDraft(
+            draft = DraftEssay(title = demoEssay.title, content = demoEssay.content),
+            research = ResearchedTopic(topic = context.topic, research = context.promptBlock()),
+            context = context,
+        )
+
         val steps = listOf(
             "researchTopic" to "Collected demo research context.",
             "writeDraft" to "Created the demo Markdown draft.",
@@ -186,7 +194,14 @@ class EssayRunService(
                     framework = "Spring AI",
                     title = "Evals completed",
                     detail = "Relevancy and faithfulness checks were recorded as typed evaluation results.",
-                )
+                ) +
+                    HtmlFragments.explanation(
+                        run = run,
+                        framework = "Dokimos",
+                        title = "Quality gates completed",
+                        detail = "Dokimos evaluated the draft against a dataset of deterministic quality checks.",
+                    ) +
+                    HtmlFragments.dokimosEvalReport(demoDokimosReport)
             }
             if (actionName == "addFrontMatter") {
                 extra = HtmlFragments.explanation(
@@ -218,7 +233,7 @@ class EssayRunService(
                 detail = "Rendering the demo essay output.",
                 state = "complete",
             ) +
-                HtmlFragments.publishedEssay(DemoArtifacts.essay(run.topic))
+                HtmlFragments.publishedEssay(demoEssay)
         )
         stream.done()
     }
@@ -282,7 +297,13 @@ private class HtmlProgressListener(
                         framework = "Spring AI",
                         title = "Evals running",
                         detail = "The draft is checked for relevancy and faithfulness before local review.",
-                    )
+                    ) +
+                        HtmlFragments.explanation(
+                            run = run,
+                            framework = "Dokimos",
+                            title = "Quality gates running",
+                            detail = "The draft is also evaluated with Dokimos dataset examples and regex quality gates.",
+                        )
                 }
                 stream.fragment(
                     HtmlFragments.actionGoalUpdate(
@@ -333,6 +354,17 @@ private class HtmlProgressListener(
                             detail = "Embabel added the DICE context capsule to the process state for downstream actions.",
                         ) +
                             HtmlFragments.contextCapsule(value)
+                    )
+                }
+                if (value is EvaluatedDraft) {
+                    stream.fragment(
+                        HtmlFragments.explanation(
+                            run = run,
+                            framework = "Dokimos",
+                            title = "Quality gates completed",
+                            detail = "Dokimos scored the draft against a small dataset of deterministic checks.",
+                        ) +
+                            HtmlFragments.dokimosEvalReport(value.evalReport.dokimos)
                     )
                 }
             }

@@ -60,6 +60,7 @@ class HtmlFragmentsTests {
         )
 
         assertThat(shell).contains("DICE")
+        assertThat(shell).contains("Dokimos")
         assertThat(shell).contains("id=\"run-test-run-goal-context\"")
         assertThat(shell).contains("id=\"run-test-run-goal-research\"")
         assertThat(shell).contains("id=\"run-test-run-explainability\"")
@@ -96,6 +97,39 @@ class HtmlFragmentsTests {
         assertThat(html).contains("87%")
         assertThat(html).contains("Library / SUBJECT")
         assertThat(html).contains("Keep propositions atomic.")
+    }
+
+    @Test
+    fun `dokimos eval report renders quality gates`() {
+        val report = DokimosEvalReport(
+            checks = listOf(
+                DokimosEvalCheck(
+                    name = "Topic anchor",
+                    passed = true,
+                    score = 1.0,
+                    threshold = 1.0,
+                    reason = "The actual output matches the pattern.",
+                    input = "Draft should include topic terms.",
+                ),
+                DokimosEvalCheck(
+                    name = "Markdown structure",
+                    passed = false,
+                    score = 0.0,
+                    threshold = 1.0,
+                    reason = "The actual output does not match the pattern.",
+                    input = "Draft should include headings.",
+                ),
+            ),
+        )
+
+        val html = HtmlFragments.dokimosEvalReport(report)
+
+        assertThat(html).contains("Dokimos evaluation")
+        assertThat(html).contains("Essay draft quality gates")
+        assertThat(html).contains("50%")
+        assertThat(html).contains("Topic anchor")
+        assertThat(html).contains("Markdown structure")
+        assertThat(html).contains("dokimos-check--fail")
     }
 
     @Test

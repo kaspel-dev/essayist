@@ -37,6 +37,7 @@ object HtmlFragments {
                   <p><strong>Embabel</strong> plans and executes typed agent actions toward the published-essay goal.</p>
                   <p><strong>DICE</strong> builds a domain-integrated context capsule before research.</p>
                   <p><strong>Spring AI</strong> carries the model and tool calls used inside those actions.</p>
+                  <p><strong>Dokimos</strong> runs deterministic eval gates over the draft before review.</p>
                 </div>
                 <div id="${run.domId("explainability")}" class="explainability__events" data-explain-target>
                   <p class="muted">Waiting for the first framework event.</p>
@@ -228,6 +229,36 @@ object HtmlFragments {
               </ul>
             </section>
           </div>
+        </section>
+        """.trimIndent()
+
+    fun dokimosEvalReport(report: DokimosEvalReport): String =
+        """
+        <section class="dokimos-report">
+          <div class="dokimos-report__header">
+            <div>
+              <p class="eyebrow">Dokimos evaluation</p>
+              <h3>${report.datasetName.escapeHtml()}</h3>
+            </div>
+            <span class="status-pill status-pill--${if (report.passed) "ready" else "warning"}">${report.statusLabel().escapeHtml()}</span>
+          </div>
+          <dl class="dokimos-report__metrics">
+            <div>
+              <dt>Pass rate</dt>
+              <dd>${report.passRateLabel().escapeHtml()}</dd>
+            </div>
+            <div>
+              <dt>Average score</dt>
+              <dd>${report.averageScoreLabel().escapeHtml()}</dd>
+            </div>
+            <div>
+              <dt>Checks</dt>
+              <dd>${report.checks.size}</dd>
+            </div>
+          </dl>
+          <ol class="dokimos-check-list">
+            ${report.checks.toDokimosCheckItems()}
+          </ol>
         </section>
         """.trimIndent()
 
@@ -774,6 +805,29 @@ private fun List<String>.toPlainListItems(): String =
         joinToString("\n") { "<li>${it.escapeHtml()}</li>" }
     }
 
+private fun List<DokimosEvalCheck>.toDokimosCheckItems(): String =
+    if (isEmpty()) {
+        """<li><span class="muted">No Dokimos checks were run.</span></li>"""
+    } else {
+        joinToString("\n") { check ->
+            val state = if (check.passed) "pass" else "fail"
+            """
+            <li class="dokimos-check dokimos-check--$state">
+              <span>${if (check.passed) "Pass" else "Review"}</span>
+              <div>
+                <strong>${check.name.escapeHtml()}</strong>
+                <p>${check.input.escapeHtml()}</p>
+                <dl>
+                  <div><dt>Score</dt><dd>${check.score.toScoreLabel()}</dd></div>
+                  <div><dt>Threshold</dt><dd>${check.threshold.toScoreLabel()}</dd></div>
+                </dl>
+                <small>${check.reason.escapeHtml()}</small>
+              </div>
+            </li>
+            """.trimIndent()
+        }
+    }
+
 private fun List<ReportMetric>.toMetricStrip(): String {
     val cards = filter { it.label.isNotBlank() || it.value.isNotBlank() }
     if (cards.isEmpty()) {
@@ -1079,6 +1133,9 @@ private fun Double.displayNumber(): String =
 
 private fun Double.toPercent(): String =
     String.format(Locale.US, "%.0f%%", coerceIn(0.0, 1.0) * 100.0)
+
+private fun Double.toScoreLabel(): String =
+    String.format(Locale.US, "%.2f", coerceIn(0.0, 1.0))
 
 private fun String.safeCssToken(): String =
     lowercase(Locale.US)

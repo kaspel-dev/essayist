@@ -18,6 +18,7 @@ java {
 
 val embabelAgentVersion = "0.4.0-SNAPSHOT"
 val diceVersion = "0.1.0-SNAPSHOT"
+val dokimosVersion = "0.23.0"
 val springAiVersion = "1.1.4"
 
 dependencyManagement {
@@ -33,6 +34,7 @@ dependencies {
     implementation("com.embabel.agent:embabel-agent-starter-openai:$embabelAgentVersion")
     implementation("com.embabel.agent:embabel-agent-starter-anthropic:$embabelAgentVersion")
     implementation("com.embabel.dice:dice:$diceVersion")
+    implementation("dev.dokimos:dokimos-core:$dokimosVersion")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

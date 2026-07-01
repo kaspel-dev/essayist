@@ -32,6 +32,9 @@ class EssayistApplicationTests {
     private lateinit var essayEvaluationService: EssayEvaluationService
 
     @Autowired
+    private lateinit var dokimosEvaluationService: DokimosEvaluationService
+
+    @Autowired
     private lateinit var reportChartPlanner: ReportChartPlanner
 
     @Autowired
@@ -99,6 +102,8 @@ class EssayistApplicationTests {
         val draft = DraftEssay(
             title = "Spring AI tool calling",
             content = """
+                ## Spring AI tool calling
+                
                 Spring AI tool calling uses tools.
                 
                 Spring AI tool calling lets an application expose trusted tools to the model.
@@ -111,7 +116,50 @@ class EssayistApplicationTests {
         assertThat(report.liveEvaluatorUsed).isFalse()
         assertThat(report.relevancy.passed).isTrue()
         assertThat(report.faithfulness.passed).isTrue()
+        assertThat(report.dokimos.checks.map { it.name })
+            .contains("Topic anchor", "DICE proposition anchor", "Research brief anchor", "Markdown structure")
+        assertThat(report.dokimos.passed).isTrue()
         assertThat(report.toFeedbackBlock()).contains("Evaluation report")
+        assertThat(report.toFeedbackBlock()).contains("Dokimos: pass")
+    }
+
+    @Test
+    fun dokimosEvaluationServiceRunsDatasetQualityGates() {
+        val context = EssayContextCapsule(
+            topic = "Spring AI tool calling",
+            propositions = listOf(
+                DiceContextProposition(
+                    text = "Spring AI tool calling exposes deterministic tools.",
+                    subject = "Spring AI",
+                    target = "tool calling",
+                )
+            ),
+        )
+        val research = ResearchedTopic(
+            topic = context.topic,
+            research = """
+                DICE context brief for Spring AI tool calling.
+                - Spring AI tool calling exposes deterministic tools.
+                - Tool responses should ground the final answer.
+            """.trimIndent(),
+        )
+        val draft = DraftEssay(
+            title = "Spring AI tool calling",
+            content = """
+                ## Spring AI tool calling
+                
+                Spring AI tool calling exposes deterministic tools to the model.
+                Tool responses should ground the final answer before the user sees it.
+            """.trimIndent(),
+        )
+
+        val report = dokimosEvaluationService.evaluateDraft(draft, research, context)
+
+        assertThat(report.datasetName).isEqualTo("Essay draft quality gates")
+        assertThat(report.checks).hasSize(4)
+        assertThat(report.passRateLabel()).isEqualTo("100%")
+        assertThat(report.averageScoreLabel()).isEqualTo("1.00")
+        assertThat(report.summary).contains("4 of 4 checks passed")
     }
 
     @Test

@@ -506,6 +506,109 @@ button:disabled {
   margin-bottom: 2px;
 }
 
+.dokimos-report {
+  margin: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+
+.dokimos-report__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.dokimos-report__header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.dokimos-report__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 14px;
+}
+
+.dokimos-report__metrics div {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.dokimos-report__metrics dt,
+.dokimos-check dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.dokimos-report__metrics dd {
+  margin: 4px 0 0;
+  font-weight: 850;
+}
+
+.dokimos-check-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dokimos-check {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 10px;
+  border-top: 1px solid rgb(217 224 232 / 70%);
+  padding-top: 10px;
+}
+
+.dokimos-check > span {
+  align-self: start;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #ccfbf1;
+  color: var(--accent-dark);
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.dokimos-check--fail > span {
+  background: #fee2e2;
+  color: var(--error);
+}
+
+.dokimos-check strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.dokimos-check p,
+.dokimos-check small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.dokimos-check dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.dokimos-check dd {
+  margin: 2px 0 0;
+  font-weight: 850;
+}
+
 .result__summary h2 {
   margin-bottom: 8px;
   font-size: 1.3rem;
@@ -886,6 +989,11 @@ pre {
   color: var(--complete);
 }
 
+.status-pill--warning {
+  background: #fef3c7;
+  color: var(--warning);
+}
+
 .status-pill--inactive {
   background: #eef2f7;
   color: var(--muted);
@@ -1019,6 +1127,7 @@ pre code {
   .run__body,
   .dice-capsule__meta,
   .dice-capsule__grid,
+  .dokimos-report__metrics,
   .metadata-grid,
   .metric-strip,
   .chart-grid,

@@ -27,7 +27,8 @@ After reading and running this project, an engineer should understand how to:
 12. Use a context-engineering preflight step to make later LLM actions more grounded and observable.
 13. Apply custom guardrails before model calls.
 14. Record relevancy and faithfulness evals as typed workflow state.
-15. Prefer framework-controlled tool loops unless a product workflow needs manual loop control.
+15. Run deterministic Dokimos quality gates over agent outputs.
+16. Prefer framework-controlled tool loops unless a product workflow needs manual loop control.
 
 ## Project Scope
 
@@ -48,6 +49,7 @@ The application is intentionally small enough to read in one sitting, but broad 
 - browser streaming
 - run lifecycle management
 - explainability events
+- evaluation reports with Dokimos quality gates
 - configuration through Spring profiles
 
 ## Quick Start
@@ -144,6 +146,51 @@ This project uses the lightweight DICE pieces that are safe for the local demo:
 - one bounded draft-generation LLM call for the essay body
 
 It does not yet persist propositions to a DICE repository or project them into graph, Prolog, or memory backends. Those are natural next steps once the product needs durable cross-run knowledge.
+
+## Dokimos Evaluation Gates
+
+The essay workflow now includes a Dokimos-backed evaluation showcase in `EssayEvaluationService`. After the draft is written, `DokimosEvaluationService` builds a small in-memory Dokimos `Dataset` and runs `RegexEvaluator` quality gates for topic anchoring, DICE proposition carry-through, research-brief carry-through, and Markdown structure.
+
+These checks are deterministic and run in demo mode, live mode, and tests. They complement the existing Spring AI relevancy and faithfulness evaluators: Spring AI can act as an optional LLM judge when `essayist.evals.live=true`, while Dokimos provides stable local quality gates that are suitable for CI.
+
+### Official Embabel Trace Integration
+
+The current implementation uses `dokimos-core` directly because the demo needs stable, no-key quality gates for the draft text. Dokimos also ships an official `dokimos-embabel` module for a deeper agent-level evaluation path: attach an `EmbabelTraceCollector` as an Embabel listener, run the agent normally, then score the captured `AgentTrace` with Dokimos agent evaluators.
+
+To add that path, use the official integration dependency. `dokimos-embabel` pulls in `dokimos-core`; this project already runs on Java 21 and already brings Embabel through the starter dependencies.
+
+```kotlin
+implementation("dev.dokimos:dokimos-embabel:$dokimosVersion")
+```
+
+The integration fits the existing `EssayRunService` invocation shape:
+
+```kotlin
+import dev.dokimos.core.evaluators.agents.ToolCallValidityEvaluator
+import dev.dokimos.core.evaluators.agents.ToolCorrectnessEvaluator
+import dev.dokimos.core.evaluators.agents.ToolEfficiencyEvaluator
+import dev.dokimos.embabel.EmbabelSupport
+import dev.dokimos.embabel.EmbabelTraceCollector
+
+val collector = EmbabelTraceCollector()
+val processOptionsWithTrace = EmbabelSupport.attach(processOptions, collector)
+
+val essay = AgentInvocation
+    .builder(agentPlatform)
+    .options(processOptionsWithTrace)
+    .build(PublishedEssay::class.java)
+    .invoke(UserInput(run.topic))
+
+val trace = collector.trace()
+val tools = EmbabelSupport.toToolDefinitions(collector)
+val testCase = trace.toTestCase(run.topic, tools)
+
+val validity = ToolCallValidityEvaluator.builder().build().evaluate(testCase)
+val efficiency = ToolEfficiencyEvaluator.builder().build().evaluate(testCase)
+val correctness = ToolCorrectnessEvaluator.builder().build().evaluate(testCase)
+```
+
+That is the natural enhancement when the product needs to evaluate agent behavior, not only the final essay text. The official collector observes Embabel tool-call events and synthesizes `ToolDefinition` entries from the observed tool names. That is enough for tool validity, correctness, and efficiency checks; for tool-description reliability, pass explicit tool definitions from the real tool contracts because the Embabel event stream does not expose full input schemas.
 
 ## Build And Test
 

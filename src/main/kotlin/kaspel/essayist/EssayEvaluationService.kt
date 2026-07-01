@@ -18,6 +18,7 @@ import kotlin.math.min
 class EssayEvaluationService(
     private val chatClientBuilderProvider: ObjectProvider<ChatClient.Builder>,
     private val properties: EssayistProperties,
+    private val dokimosEvaluationService: DokimosEvaluationService,
 ) {
 
     fun evaluateDraft(
@@ -35,6 +36,7 @@ class EssayEvaluationService(
             emptyList<Document>(),
             draft.content,
         )
+        val dokimosReport = dokimosEvaluationService.evaluateDraft(draft, research, context)
 
         val liveReport = if (properties.liveEvalsEnabled) {
             evaluateWithSpringAi(relevancyRequest, faithfulnessRequest)
@@ -42,13 +44,14 @@ class EssayEvaluationService(
             null
         }
 
-        return liveReport ?: EssayEvalReport(
+        return liveReport?.copy(dokimos = dokimosReport) ?: EssayEvalReport(
             relevancy = heuristicRelevancyEvaluator(context)
                 .evaluate(relevancyRequest)
                 .toFinding(name = "relevancy", evaluator = "deterministic-relevancy"),
             faithfulness = heuristicFaithfulnessEvaluator(context, research)
                 .evaluate(faithfulnessRequest)
                 .toFinding(name = "faithfulness", evaluator = "deterministic-faithfulness"),
+            dokimos = dokimosReport,
             liveEvaluatorUsed = false,
         )
     }
