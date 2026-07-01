@@ -214,7 +214,7 @@ writer = Agent(
 )
 
 task = Task(
-    description='Write a blog post about AI in 2025',
+    description='Write a blog post about AI in 2026',
     agent=writer
 )
 
