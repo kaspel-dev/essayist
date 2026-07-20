@@ -11,11 +11,6 @@ dependencyResolutionManagement {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven("https://repo.embabel.com/artifactory/libs-release") {
-            mavenContent {
-                releasesOnly()
-            }
-        }
         maven("https://repo.embabel.com/artifactory/libs-snapshot") {
             mavenContent {
                 snapshotsOnly()

@@ -16,7 +16,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-val embabelAgentVersion = "0.4.0-SNAPSHOT"
+val embabelAgentVersion = "1.0.0"
 val diceVersion = "0.1.0-SNAPSHOT"
 val dokimosVersion = "0.23.0"
 val springAiVersion = "1.1.4"
